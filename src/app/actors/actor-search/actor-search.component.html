@@ -1,0 +1,12 @@
+<div id="actor-search-component">
+  <label for="actor-search-box">Actor Search</label>
+  <input #searchBox id="actor-search-box" (input)="search(searchBox.value)" />
+
+  <ul class="actor-search-result">
+    <li *ngFor="let actor of actors$ | async">
+      <a routerLink="/actor-detail/{{ actor.id }}">
+        {{ actor.name }}
+      </a>
+    </li>
+  </ul>
+</div>

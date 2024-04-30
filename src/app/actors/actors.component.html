@@ -1,0 +1,42 @@
+<h2>Actors</h2>
+
+<div>
+  <label for="new-actor-name">Actor name: </label>
+  <input id="new-actor-name" #actorName required />
+  <label for="new-actor-age">Actor age: </label>
+  <input
+    id="new-actor-age"
+    #actorAge
+    type="number"
+    min="0"
+    max="150"
+    required
+  />
+  <label for="new-actor-gender">Actor gender: </label>
+  <input id="new-actor-gender" #actorGender required />
+
+  <!-- (click) passes input value to add() and then clears the input -->
+  <button
+    type="button"
+    class="add-button"
+    (click)="add(actorName.value); actorName.value = ''"
+  >
+    Add Actor
+  </button>
+</div>
+
+<ul class="actors">
+  <li *ngFor="let actor of actors">
+    <a routerLink="/actor-detail/{{ actor.id }}">
+      <span class="badge">{{ actor.id }}</span> {{ actor.name }}
+    </a>
+    <button
+      type="button"
+      class="delete"
+      title="delete actor"
+      (click)="delete(actor)"
+    >
+      x
+    </button>
+  </li>
+</ul>

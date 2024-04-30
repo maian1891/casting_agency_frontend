@@ -1,0 +1,32 @@
+<div *ngIf="actor">
+  <h2>{{ actor.name | uppercase }} Details</h2>
+  <div><span>id: </span>{{ actor.id }}</div>
+  <div>
+    <label for="actor-name">Actor name: </label>
+    <input
+      id="actor-name"
+      [(ngModel)]="actor.name"
+      placeholder="Actor name"
+      required
+    />
+    <label for="actor-age">Actor age: </label>
+    <input
+      id="actor-age"
+      [(ngModel)]="actor.age"
+      placeholder="Actor age"
+      type="number"
+      min="0"
+      max="150"
+      required
+    />
+    <label for="actor-gender">Actor gender: </label>
+    <input
+      id="actor-gender"
+      [(ngModel)]="actor.gender"
+      placeholder="Actor gender"
+      required
+    />
+  </div>
+  <button type="button" (click)="goBack()">go back</button>
+  <button type="button" (click)="save()">save</button>
+</div>
