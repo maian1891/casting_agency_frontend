@@ -1,39 +1,23 @@
 <h2>Actors</h2>
+<app-actor-search></app-actor-search>
 
-<div>
-  <label for="new-actor-name">Actor name: </label>
-  <input id="new-actor-name" #actorName required />
-  <label for="new-actor-age">Actor age: </label>
-  <input
-    id="new-actor-age"
-    #actorAge
-    type="number"
-    min="0"
-    max="150"
-    required
-  />
-  <label for="new-actor-gender">Actor gender: </label>
-  <input id="new-actor-gender" #actorGender required />
-
-  <!-- (click) passes input value to add() and then clears the input -->
-  <button
-    type="button"
-    class="add-button"
-    (click)="add(actorName.value); actorName.value = ''"
-  >
-    Add Actor
-  </button>
-</div>
+<a
+  class="btn btn-primary"
+  routerLink="/actors/create"
+  *ngIf="auth.isExecutiveProducer() || auth.isCastingDirector()"
+  >Add actor</a
+>
 
 <ul class="actors">
   <li *ngFor="let actor of actors">
-    <a routerLink="/actor-detail/{{ actor.id }}">
+    <a routerLink="/actors/detail/{{ actor.id }}">
       <span class="badge">{{ actor.id }}</span> {{ actor.name }}
     </a>
     <button
       type="button"
-      class="delete"
+      class="delete btn btn-primary"
       title="delete actor"
+      [hidden]="auth.isCastingAssistance()"
       (click)="delete(actor)"
     >
       x

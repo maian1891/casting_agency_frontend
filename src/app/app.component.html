@@ -1,10 +1,1 @@
-<ng-container *ngIf="auth.token">
-  <h1>{{ title }}</h1>
-  <nav>
-    <a routerLink="/actors">Actors</a>
-    <a routerLink="/movies">Movies</a>
-    <a (click)="logout()">Log Out</a>
-  </nav>
-</ng-container>
-
 <router-outlet></router-outlet>

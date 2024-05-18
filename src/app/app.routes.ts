@@ -4,32 +4,66 @@ import { ActorsComponent } from './actors/actors.component';
 import { MoviesComponent } from './movies/movies.component';
 import { ActorDetailComponent } from './actors/actor-detail/actor-detail.component';
 import { MovieDetailComponent } from './movies/movie-detail/movie-detail.component';
-import { AuthGuard } from './guards/auth.guard';
-import { UnauthorizedComponent } from './unauthorized/unauthorized.component';
+import { authGuard } from './guards/auth.guard';
+import { PageNotFoundComponent } from './page-not-found/page-not-found.component';
+import { BaseLayoutComponent } from './base-layout/base-layout.component';
+import { ActorCreateComponent } from './actors/actor-create/actor-create.component';
+import { MoviesAuthGuard } from './guards/movies-auth.guard';
+import { ActorsAuthGuard } from './guards/actors-auth.guard';
+import { MovieCreateComponent } from './movies/movie-create/movie-create.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: UserComponent },
   {
     path: 'actors',
-    component: ActorsComponent,
-    canActivate: [AuthGuard],
+    canActivate: [authGuard],
     children: [
       {
-        path: 'detail/:id',
-        component: ActorDetailComponent,
+        path: '',
+        component: BaseLayoutComponent,
+        canActivateChild: [authGuard],
+        children: [
+          { path: '', component: ActorsComponent, pathMatch: 'full' },
+          {
+            path: 'detail/:id',
+            component: ActorDetailComponent,
+          },
+          {
+            path: 'create',
+            component: ActorCreateComponent,
+            canActivate: [ActorsAuthGuard],
+          },
+        ],
       },
     ],
   },
   {
     path: 'movies',
-    component: MoviesComponent,
-    canActivate: [AuthGuard],
-    children: [{ path: 'detail/:id', component: MovieDetailComponent }],
+    canActivate: [authGuard],
+    children: [
+      {
+        path: '',
+        component: BaseLayoutComponent,
+        children: [
+          {
+            path: '',
+            component: MoviesComponent,
+            pathMatch: 'full',
+          },
+          { path: 'detail/:id', component: MovieDetailComponent },
+          {
+            path: 'create',
+            component: MovieCreateComponent,
+            canActivate: [MoviesAuthGuard],
+          },
+        ],
+      },
+    ],
   },
-  { path: 'unauthorized', component: UnauthorizedComponent },
+  { path: '404', component: PageNotFoundComponent },
   {
     path: '**',
-    redirectTo: 'login',
+    redirectTo: '404',
   },
 ];

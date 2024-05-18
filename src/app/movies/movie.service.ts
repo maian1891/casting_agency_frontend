@@ -1,21 +1,28 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Observable, catchError, of, switchMap, tap } from 'rxjs';
 import { Movie } from './movie';
+import { HandleErrorService } from '../services/handleError.service';
+import { MiddlewareService } from '../services/middleware.service';
 
 @Injectable({ providedIn: 'root' })
-export class MovieService {
-  private moviesUrl = 'api/movies'; // URL to web api
-
-  httpOptions = {
-    headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
-  };
-
-  constructor(private http: HttpClient) {}
+export class MovieService extends HandleErrorService {
+  constructor(private middlewareService: MiddlewareService) {
+    super();
+  }
 
   /** GET movies from the server */
   getMovies(): Observable<Movie[]> {
-    return this.http.get<Movie[]>(this.moviesUrl).pipe(
+    return this.middlewareService.get$<Movie[]>('movies').pipe(
+      switchMap((response) => {
+        const data = response?.data;
+        let result;
+        if (Array.isArray(data)) {
+          result = data;
+        } else {
+          result = data ? [data] : [];
+        }
+        return of(result);
+      }),
       tap((_) => console.log('fetched movie')),
       catchError(this.handleError<Movie[]>('getMovies', []))
     );
@@ -23,9 +30,11 @@ export class MovieService {
 
   /** GET movie by id. Return `undefined` when id not found */
   getMovieNo404<Data>(id: number): Observable<Movie> {
-    const url = `${this.moviesUrl}/?id=${id}`;
-    return this.http.get<Movie[]>(url).pipe(
-      map((movies) => movies[0]), // returns a {0|1} element array
+    const url = `movie-detail/?id=${id}`;
+    return this.middlewareService.get$<Movie[]>(url).pipe(
+      switchMap((response) =>
+        of(response && response.data ? response.data[0] : ({} as Movie))
+      ),
       tap((h) => {
         const outcome = h ? 'fetched' : 'did not find';
         console.log(`${outcome} movie id=${id}`);
@@ -36,9 +45,9 @@ export class MovieService {
 
   /** GET movie by id. Will 404 if id not found */
   getMovie(id: number): Observable<Movie> {
-    const url = `${this.moviesUrl}/${id}`;
-    return this.http.get<Movie>(url).pipe(
-      tap((_) => console.log(`fetched movie id=${id}`)),
+    const url = `movie-detail/${id}`;
+    return this.middlewareService.get$<Movie>(url).pipe(
+      switchMap((response) => of(response?.data as Movie)),
       catchError(this.handleError<Movie>(`getMovie id=${id}`))
     );
   }
@@ -49,55 +58,60 @@ export class MovieService {
       // if not search term, return empty movie array.
       return of([]);
     }
-    return this.http.get<Movie[]>(`${this.moviesUrl}/?name=${keySearch}`).pipe(
-      tap((x) =>
-        x.length
-          ? console.log(`found movies matching "${keySearch}"`)
-          : console.log(`no movies matching "${keySearch}"`)
-      ),
-      catchError(this.handleError<Movie[]>('searchMovies', []))
-    );
+    return this.middlewareService
+      .get$<Movie[]>(`movies/?name=${keySearch}`)
+      .pipe(
+        switchMap((response) => {
+          const data = response?.data;
+          let result;
+          if (Array.isArray(data)) {
+            result = data;
+          } else {
+            result = data ? [data] : [];
+          }
+          return of(result);
+        }),
+        tap((x) =>
+          x.length
+            ? console.log(`found movies matching "${keySearch}"`)
+            : console.log(`no movies matching "${keySearch}"`)
+        ),
+        catchError(this.handleError<Movie[]>('searchMovies', []))
+      );
   }
 
   //////// Save methods //////////
 
   /** POST: add a new movie to the server */
   addMovie(movie: Movie): Observable<Movie> {
-    return this.http.post<Movie>(this.moviesUrl, movie, this.httpOptions).pipe(
-      tap((newMovie: Movie) => console.log(`added movie w/ id=${newMovie.id}`)),
-      catchError(this.handleError<Movie>('addMovie'))
-    );
+    return this.middlewareService
+      .post$<Movie, Movie>('movie', { data: movie })
+      .pipe(
+        switchMap((response) => of(response?.data as Movie)),
+        catchError(this.handleError<Movie>('addMovie'))
+      );
   }
 
   /** DELETE: delete the movie from the server */
-  deleteMovie(id: number): Observable<Movie> {
-    const url = `${this.moviesUrl}/${id}`;
+  deleteMovie(id: number): Observable<number> {
+    const url = `movie/${id}`;
 
-    return this.http.delete<Movie>(url, this.httpOptions).pipe(
-      tap((_) => console.log(`deleted movie id=${id}`)),
-      catchError(this.handleError<Movie>('deleteMovie'))
-    );
+    return this.middlewareService
+      .delete$<Movie, number>(url, { data: { id: id } as Movie })
+      .pipe(
+        switchMap((response) => of(response?.data as number)),
+        tap((_) => console.log(`deleted movie id=${id}`)),
+        catchError(this.handleError<number>('deleteMovie'))
+      );
   }
 
   /** PUT: update the movie on the server */
-  updateMovie(movie: Movie): Observable<any> {
-    return this.http.put(this.moviesUrl, movie, this.httpOptions).pipe(
+  updateMovie(movie: Movie): Observable<unknown> {
+    const url = 'movie';
+    return this.middlewareService.patch$(url, { data: movie }).pipe(
+      switchMap((response) => of(response?.data)),
       tap((_) => console.log(`updated movie id=${movie.id}`)),
-      catchError(this.handleError<any>('updateMovie'))
+      catchError(this.handleError<unknown>('updateMovie'))
     );
-  }
-
-  /**
-   * Handle Http operation that failed.
-   * Let the app continue.
-   *
-   * @param operation - name of the operation that failed
-   * @param result - optional value to return as the observable result
-   */
-  private handleError<T>(operation = 'operation', result?: T) {
-    return (error: any): Observable<T> => {
-      console.error(`${operation} failed: ${error.message}`); // log to console instead
-      return of(result as T);
-    };
   }
 }

@@ -16,9 +16,7 @@ export class AuthService {
   token!: string;
   payload: any;
 
-  constructor() {
-    console.log(`auth url ${this.url}`);
-  }
+  constructor() {}
 
   build_login_link(callbackPath = ''): string {
     let link = 'https://';
@@ -48,6 +46,13 @@ export class AuthService {
     localStorage.setItem(JWTS_LOCAL_KEY, this.token);
     if (this.token) {
       this.decodeJWT(this.token);
+    }
+  }
+
+  set_token(token: string): void {
+    localStorage.setItem(JWTS_LOCAL_KEY, token);
+    if (token) {
+      this.decodeJWT(token);
     }
   }
 
@@ -89,20 +94,21 @@ export class AuthService {
     );
   }
 
+  isCastingAssistance() {
+    return this.isRole('Casting Assistant');
+  }
+
   isCastingDirector() {
-    return this.isAudience('casting-director');
+    return this.isRole('Casting Director');
   }
 
   isExecutiveProducer() {
-    return this.isAudience('executive-producer');
+    return this.isRole('Executive Producer');
   }
 
-  private isAudience(audience: string): boolean {
+  private isRole(role: string): boolean {
     return (
-      this.payload &&
-      this.payload.aud &&
-      this.payload.aud.length &&
-      this.payload.aud.indexOf(audience) >= 0
+      this.payload && this.payload.aud && this.payload.zroles.includes(role)
     );
   }
 }

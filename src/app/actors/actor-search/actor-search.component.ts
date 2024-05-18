@@ -28,6 +28,7 @@ export class ActorSearchComponent implements OnDestroy {
   constructor(private actorService: ActorService) {}
   ngOnDestroy(): void {
     this.destroy.next(null);
+    this.destroy.complete();
   }
 
   // Push a search term into the observable stream.

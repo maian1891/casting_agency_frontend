@@ -1,28 +1,42 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Observable, catchError, of, switchMap, tap } from 'rxjs';
 import { Actor } from './actor';
-import { AuthService } from '../user/auth.service';
+import { MiddlewareService } from '../services/middleware.service';
+import { HandleErrorService } from '../services/handleError.service';
 
 @Injectable({ providedIn: 'root' })
-export class ActorService {
-  private actorsUrl = 'api/actors'; // URL to web api
-
-  constructor(private auth: AuthService, private http: HttpClient) {}
+export class ActorService extends HandleErrorService {
+  constructor(private middlewareService: MiddlewareService) {
+    super();
+  }
 
   /** GET actors from the server */
   getActors(): Observable<Actor[]> {
-    return this.http.get<Actor[]>(this.actorsUrl, this.getHeaders()).pipe(
-      tap((_) => console.log('fetched actor')),
+    return this.middlewareService.get$<Actor[]>('actors').pipe(
+      switchMap((response) => {
+        const data = response?.data;
+        let result;
+        if (Array.isArray(data)) {
+          result = data;
+        } else {
+          result = data ? [data] : [];
+        }
+        return of(result);
+      }),
+      tap((actors) => {
+        console.log('fetched actors ', actors);
+      }),
       catchError(this.handleError<Actor[]>('getActors', []))
     );
   }
 
   /** GET actor by id. Return `undefined` when id not found */
   getActorNo404<Data>(id: number): Observable<Actor> {
-    const url = `${this.actorsUrl}/?id=${id}`;
-    return this.http.get<Actor[]>(url, this.getHeaders()).pipe(
-      map((actors) => actors[0]), // returns a {0|1} element array
+    const url = `actor-detail/?id=${id}`;
+    return this.middlewareService.get$<Actor[]>(url).pipe(
+      switchMap((response) =>
+        of(response && response.data ? response.data[0] : ({} as Actor))
+      ),
       tap((h) => {
         const outcome = h ? 'fetched' : 'did not find';
         console.log(`${outcome} actor id=${id}`);
@@ -33,9 +47,9 @@ export class ActorService {
 
   /** GET actor by id. Will 404 if id not found */
   getActor(id: number): Observable<Actor> {
-    const url = `${this.actorsUrl}/${id}`;
-    return this.http.get<Actor>(url, this.getHeaders()).pipe(
-      tap((_) => console.log(`fetched actor id=${id}`)),
+    const url = `actor-detail/${id}`;
+    return this.middlewareService.get$<Actor>(url).pipe(
+      switchMap((response) => of(response.data as Actor)),
       catchError(this.handleError<Actor>(`getActor id=${id}`))
     );
   }
@@ -46,9 +60,19 @@ export class ActorService {
       // if not search term, return empty actor array.
       return of([]);
     }
-    return this.http
-      .get<Actor[]>(`${this.actorsUrl}/?name=${keySearch}`, this.getHeaders())
+    return this.middlewareService
+      .get$<Actor[]>(`actors/?name=${keySearch}`)
       .pipe(
+        switchMap((response) => {
+          const payload = response?.data;
+          let result;
+          if (Array.isArray(payload)) {
+            result = payload;
+          } else {
+            result = payload ? [payload] : [];
+          }
+          return of(result);
+        }),
         tap((x) =>
           x.length
             ? console.log(`found actors matching "${keySearch}"`)
@@ -62,9 +86,10 @@ export class ActorService {
 
   /** POST: add a new actor to the server */
   addActor(actor: Actor): Observable<Actor> {
-    return this.http
-      .post<Actor>(this.actorsUrl, actor, this.getHeaders(true))
+    return this.middlewareService
+      .post$<Actor, Actor>('actor', { data: actor })
       .pipe(
+        switchMap((response) => of(response?.data as Actor)),
         tap((newActor: Actor) =>
           console.log(`added actor w/ id=${newActor.id}`)
         ),
@@ -73,47 +98,25 @@ export class ActorService {
   }
 
   /** DELETE: delete the actor from the server */
-  deleteActor(id: number): Observable<Actor> {
-    const url = `${this.actorsUrl}/${id}`;
+  deleteActor(id: number): Observable<number> {
+    const url = `actor/${id}`;
 
-    return this.http.delete<Actor>(url, this.getHeaders(true)).pipe(
-      tap((_) => console.log(`deleted actor id=${id}`)),
-      catchError(this.handleError<Actor>('deleteActor'))
-    );
+    return this.middlewareService
+      .delete$<Actor, number>(url, { data: { id: id } as Actor })
+      .pipe(
+        switchMap((response) => of(response?.data as number)),
+        tap((_) => console.log(`deleted actor id=${id}`)),
+        catchError(this.handleError<number>('deleteActor'))
+      );
   }
 
   /** PUT: update the actor on the server */
-  updateActor(actor: Actor): Observable<any> {
-    return this.http.put(this.actorsUrl, actor, this.getHeaders(true)).pipe(
+  updateActor(actor: Actor): Observable<unknown> {
+    const url = 'actor';
+    return this.middlewareService.patch$(url, { data: actor }).pipe(
+      switchMap((response) => of(response?.data)),
       tap((_) => console.log(`updated actor id=${actor.id}`)),
-      catchError(this.handleError<any>('updateActor'))
+      catchError(this.handleError<unknown>('updateActor'))
     );
-  }
-
-  /**
-   * Handle Http operation that failed.
-   * Let the app continue.
-   *
-   * @param operation - name of the operation that failed
-   * @param result - optional value to return as the observable result
-   */
-  private handleError<T>(operation = 'operation', result?: T) {
-    return (error: any): Observable<T> => {
-      console.error(`${operation} failed: ${error.message}`); // log to console instead
-      return of(result as T);
-    };
-  }
-
-  private getHeaders(isJson: boolean = false) {
-    let header = {
-      headers: new HttpHeaders().set(
-        'Authorization',
-        `Bearer ${this.auth.activeJWT()}`
-      ),
-    };
-
-    if (isJson) header.headers.append('Content-Type', 'application/json');
-
-    return header;
   }
 }

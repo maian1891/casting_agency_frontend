@@ -26,8 +26,10 @@ export class MovieSearchComponent implements OnDestroy {
   private destroy: ReplaySubject<any> = new ReplaySubject<any>(1);
 
   constructor(private movieService: MovieService) {}
+
   ngOnDestroy(): void {
     this.destroy.next(null);
+    this.destroy.complete();
   }
 
   // Push a search term into the observable stream.

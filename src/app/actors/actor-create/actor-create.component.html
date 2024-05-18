@@ -1,5 +1,5 @@
-<div *ngIf="formActor">
-  <h2>Details</h2>
+<div>
+  <h2>Add Actor Page</h2>
   <form [formGroup]="formActor">
     <div class="mb-3 mt-3">
       <label class="form-label" for="actor-name">Actor name: </label>
@@ -9,7 +9,6 @@
         formControlName="name"
         [ngClass]="{ 'is-invalid': submitted && f['name'].errors }"
         placeholder="Actor name"
-        [readonly]="auth.isCastingAssistance()"
       />
       <div *ngIf="f['name'].errors" class="invalid-feedback">
         <div *ngIf="f['name'].errors['required']">Actor name is required</div>
@@ -22,16 +21,13 @@
         class="form-control"
         formControlName="age"
         placeholder="Actor age"
-        [readonly]="auth.isCastingAssistance()"
         [ngClass]="{ 'is-invalid': submitted && f['age'].errors }"
         type="number"
         min="0"
         max="150"
       />
       <div *ngIf="f['age'].errors" class="invalid-feedback">
-        <div *ngIf="f['age'].errors['age']">
-          Actor age is greater than 0 and less than 150
-        </div>
+        <div *ngIf="f['age'].errors['age']">Actor age is greater than 0 and less than 150</div>
       </div>
     </div>
     <div class="mb-3">
@@ -39,29 +35,18 @@
       <input
         id="actor-gender"
         class="form-control"
-        formControlName="gender"
-        [readonly]="auth.isCastingAssistance()"
         [ngClass]="{ 'is-invalid': submitted && f['gender'].errors }"
+        formControlName="gender"
         placeholder="Actor gender"
       />
       <div *ngIf="f['gender'].errors" class="invalid-feedback">
-        <div *ngIf="f['gender'].errors['gender']">
-          Actor gender is male or female
-        </div>
+        <div *ngIf="f['gender'].errors['gender']">Actor gender is male or female</div>
       </div>
     </div>
-    <p>Form Status: {{ formActor.status }}</p>
 
     <button type="button" class="btn btn-secondary me-3" (click)="goBack()">
       go back
     </button>
-    <button
-      class="btn btn-primary"
-      type="submit"
-      (click)="save()"
-      *ngIf="auth.isCastingDirector() || auth.isExecutiveProducer()"
-    >
-      save
-    </button>
+    <button class="btn btn-primary" type="submit" (click)="add()">Add</button>
   </form>
 </div>

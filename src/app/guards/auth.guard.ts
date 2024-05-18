@@ -1,19 +1,15 @@
-import { Injectable } from '@angular/core';
-import { Router } from '@angular/router';
+import { inject } from '@angular/core';
 import { AuthService } from '../user/auth.service';
+import { PageFlowService } from '../services/page-flow.service';
 
-@Injectable({
-  providedIn: 'root',
-})
-export class AuthGuard {
-  constructor(private authService: AuthService, private router: Router) {}
+export const authGuard = () => {
+  const authService = inject(AuthService);
+  const pageFlowService = inject(PageFlowService);
 
-  canActivate(): boolean {
-    if (this.authService.isAuthenticated()) {
-      return true; // Allow access if the user is authenticated
-    } else {
-      this.router.navigate(['/login']); // Redirect to login if not authenticated
-      return false; // Prevent access to the route
-    }
+  if (authService.isAuthenticated()) {
+    return true; // Allow access if the user is authenticated
+  } else {
+    pageFlowService.next(['/login']); // Redirect to login if not authenticated
+    return false; // Prevent access to the route
   }
-}
+};

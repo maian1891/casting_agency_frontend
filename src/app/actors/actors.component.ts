@@ -1,14 +1,16 @@
 import { Component, OnDestroy } from '@angular/core';
 import { Actor } from './actor';
 import { ActorService } from './actor.service';
-import { NgFor } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { RouterLink, RouterModule } from '@angular/router';
-import { ReplaySubject, takeUntil } from 'rxjs';
+import { ReplaySubject, takeUntil, tap } from 'rxjs';
+import { AuthService } from '../user/auth.service';
+import { ActorSearchComponent } from './actor-search/actor-search.component';
 
 @Component({
   selector: 'app-actors',
   standalone: true,
-  imports: [NgFor, RouterLink, RouterModule],
+  imports: [NgFor, RouterLink, RouterModule, NgIf, ActorSearchComponent],
   templateUrl: './actors.component.html',
   styleUrl: './actors.component.scss',
 })
@@ -16,10 +18,11 @@ export class ActorsComponent implements OnDestroy {
   actors: Actor[] = [];
   private destroy: ReplaySubject<any> = new ReplaySubject<any>(1);
 
-  constructor(private actorService: ActorService) {}
+  constructor(private actorService: ActorService, public auth: AuthService) {}
 
   ngOnDestroy(): void {
     this.destroy.next(null);
+    this.destroy.complete();
   }
 
   ngOnInit(): void {
@@ -29,21 +32,11 @@ export class ActorsComponent implements OnDestroy {
   getActors(): void {
     this.actorService
       .getActors()
-      .pipe(takeUntil(this.destroy))
-      .subscribe((actors) => (this.actors = actors));
-  }
-
-  add(name: string): void {
-    name = name.trim();
-    if (!name) {
-      return;
-    }
-    this.actorService
-      .addActor({ name } as Actor)
-      .pipe(takeUntil(this.destroy))
-      .subscribe((actor) => {
-        this.actors.push(actor);
-      });
+      .pipe(
+        takeUntil(this.destroy),
+        tap((actors) => (this.actors = actors))
+      )
+      .subscribe();
   }
 
   delete(actor: Actor): void {

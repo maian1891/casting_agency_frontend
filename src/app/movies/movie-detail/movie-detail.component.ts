@@ -1,42 +1,72 @@
-import { ReplaySubject, takeUntil } from 'rxjs';
-import { FormsModule } from '@angular/forms';
-import { UpperCasePipe, NgIf, Location } from '@angular/common';
+import { ReplaySubject, takeUntil, tap } from 'rxjs';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { UpperCasePipe, NgIf, Location, CommonModule } from '@angular/common';
 import { Component, OnDestroy } from '@angular/core';
-import { Movie } from '../movie';
 import { ActivatedRoute } from '@angular/router';
 import { MovieService } from '../movie.service';
+import { AuthService } from '../../user/auth.service';
 
 @Component({
   selector: 'app-movie-detail',
   standalone: true,
-  imports: [NgIf, UpperCasePipe, FormsModule],
+  imports: [NgIf, UpperCasePipe, ReactiveFormsModule, CommonModule],
   templateUrl: './movie-detail.component.html',
   styleUrl: './movie-detail.component.scss',
 })
 export class MovieDetailComponent implements OnDestroy {
-  movie!: Movie;
+  formMovie!: FormGroup;
+  submitted = false;
   private destroy: ReplaySubject<any> = new ReplaySubject<any>(1);
 
   constructor(
     private route: ActivatedRoute,
     private movieService: MovieService,
-    private location: Location
+    private location: Location,
+    public auth: AuthService,
+    private formBuilder: FormBuilder
   ) {}
 
   ngOnDestroy(): void {
     this.destroy.next(null);
+    this.destroy.complete();
   }
 
   ngOnInit(): void {
     this.getMovie();
   }
 
+  get f() {
+    return this.formMovie.controls;
+  }
+
   getMovie(): void {
     const id = parseInt(this.route.snapshot.paramMap.get('id')!, 10);
     this.movieService
       .getMovie(id)
-      .pipe(takeUntil(this.destroy))
-      .subscribe((movie) => (this.movie = movie));
+      .pipe(
+        tap((movie) => {
+          this.formMovie = this.formBuilder.group({
+            id: [movie.id],
+            title: [movie.title, Validators.required],
+            releaseDate: [
+              this.formatDate(movie.releaseDate),
+              [
+                Validators.required,
+                Validators.pattern(
+                  /^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/
+                ),
+              ],
+            ],
+          });
+        }),
+        takeUntil(this.destroy)
+      )
+      .subscribe();
   }
 
   goBack(): void {
@@ -44,11 +74,27 @@ export class MovieDetailComponent implements OnDestroy {
   }
 
   save(): void {
-    if (this.movie) {
-      this.movieService
-        .updateMovie(this.movie)
-        .pipe(takeUntil(this.destroy))
-        .subscribe(() => this.goBack());
+    this.submitted = true;
+    if (this.formMovie.invalid) {
+      return;
     }
+
+    this.movieService
+      .updateMovie(this.formMovie.value)
+      .pipe(
+        tap(() => this.goBack()),
+        takeUntil(this.destroy)
+      )
+      .subscribe();
+  }
+
+  private formatDate(date: Date) {
+    const d = new Date(date);
+    let month = '' + (d.getMonth() + 1);
+    let day = '' + d.getDate();
+    const year = d.getFullYear();
+    if (month.length < 2) month = '0' + month;
+    if (day.length < 2) day = '0' + day;
+    return [year, month, day].join('-');
   }
 }

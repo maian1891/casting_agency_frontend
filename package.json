@@ -5,7 +5,8 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "watch": "ng build --watch --configuration development"
+    "watch": "ng build --watch --configuration development",
+    "dev": "lite-server --baseDir='dist/casting_agency_frontend'"
   },
   "private": true,
   "dependencies": {
@@ -33,6 +34,7 @@
     "@types/jasmine": "~5.1.0",
     "@types/node": "^20.12.7",
     "dotenv": "^16.4.5",
+    "lite-server": "^2.6.1",
     "typescript": "~5.4.2"
   }
 }

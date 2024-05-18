@@ -1,5 +1,5 @@
-<div *ngIf="formMovie">
-  <h2>Details</h2>
+<div>
+  <h2>Add Movie Page</h2>
   <form [formGroup]="formMovie">
     <div class="mb-3 mt-3">
       <label class="form-label" for="movie-title">Movie title: </label>
@@ -7,9 +7,8 @@
         id="movie-title"
         class="form-control"
         formControlName="title"
-        placeholder="Movie title"
         [ngClass]="{ 'is-invalid': submitted && f['title'].errors }"
-        [readonly]="!auth.isExecutiveProducer()"
+        placeholder="Movie title"
       />
       <div *ngIf="f['title'].errors" class="invalid-feedback">
         <div *ngIf="f['title'].errors['required']">Movie title is required</div>
@@ -21,7 +20,7 @@
         id="release-date"
         class="form-control"
         formControlName="releaseDate"
-        [readonly]="!auth.isExecutiveProducer()"
+        placeholder="Release date"
         [ngClass]="{ 'is-invalid': submitted && f['releaseDate'].errors }"
         type="date"
       />
@@ -34,18 +33,10 @@
         </div>
       </div>
     </div>
-    <p>Form Status: {{ formMovie.status }}</p>
 
     <button type="button" class="btn btn-secondary me-3" (click)="goBack()">
       go back
     </button>
-    <button
-      class="btn btn-primary"
-      type="submit"
-      (click)="save()"
-      *ngIf="auth.isExecutiveProducer()"
-    >
-      save
-    </button>
+    <button class="btn btn-primary" type="submit" (click)="add()">Add</button>
   </form>
 </div>
