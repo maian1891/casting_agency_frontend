@@ -13,8 +13,7 @@ import { ActorsAuthGuard } from './guards/actors-auth.guard';
 import { MovieCreateComponent } from './movies/movie-create/movie-create.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: 'login', component: UserComponent },
+  { path: '', component: UserComponent, pathMatch: 'full' },
   {
     path: 'actors',
     canActivate: [authGuard],
