@@ -28,7 +28,10 @@ export class MiddlewareService {
       'Content-Type',
       'application/json'
     );
-
+    additionalHeaders = additionalHeaders.set(
+      'Access-Control-Allow-Origin',
+      `*`
+    );
     additionalHeaders = additionalHeaders.set(
       'Authorization',
       `Bearer ${this.auth.activeJWT()}`
